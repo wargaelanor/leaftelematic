@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guide: Bringing Navigation Back Online (ZE0 & AZE0 2011-2015)</title>
+    <title>Инструкция: возвращение навигации в сеть (ZE0 и AZE0 2011–2015)</title>
   <style>
     html {
         display: flex;
@@ -49,7 +49,7 @@
     }
     .video-container {
       position: relative;
-      padding-bottom: 56.25%; /* 16:9 aspect ratio */
+      padding-bottom: 56.25%;
       height: 0;
       overflow: hidden;
       max-width: 100%;
@@ -70,89 +70,88 @@
   </style>
 </head>
 <body>
-<h1>Guide: Bringing Your Navigator Back Online<br/>(ZE0 & AZE0 2011-2015)</h1>
-<p style="text-align: center"><span class="warning">NOTE: This guide is for navigation units with two SD Slots behind the screen. If you have only one, please follow <a href="/static/navi_guide2.html">this guide</a>.</span>  <br/> This detailed guide will walk you through the process of changing your navigator's APN settings. Follow each step carefully to ensure successful setup. </p>
+<h1>Инструкция: возвращение навигатора в сеть<br/>(ZE0 и AZE0 2011–2015)</h1>
+<p style="text-align: center"><span class="warning">ПРИМЕЧАНИЕ: Эта инструкция для навигационных блоков с двумя SD-слотами за экраном. Если у вас только один слот, следуйте <a href="/static/navi_guide2.html">этой инструкции</a>.</span>  <br/> Эта подробная инструкция поможет вам изменить настройки APN вашего навигатора. Внимательно следуйте каждому шагу для успешной настройки. </p>
 <div class="step">
-  <h2><span class="step-number">Step 1:</span> Download Leaf SD Tools and install it on an SD card</h2>
-  <p>You’ll need Leaf SD Tools toolkit in order to export navigator's settings. Here’s how to proceed:</p>
+  <h2><span class="step-number">Шаг 1:</span> Скачайте Leaf SD Tools и запишите его на SD-карту</h2>
+  <p>Для экспорта настроек навигатора понадобится набор инструментов Leaf SD Tools. Как действовать:</p>
   <ul>
-    <li><strong>0:</strong>Get yourself an SD card with capacity 8GB or higher. Micro SD with adapter also works.</li>
-    <li><strong>1:</strong> Download latest Leaf SD Tools .img file from <a href="https://github.com/developerfromjokela/leafsdtools/releases/latest">GitHub (LeafSDTools-xxx.img.tar.gz)</a></li>
-    <li><strong>2:</strong> Download <a href="https://etcher.balena.io/">balenaEtcher</a> or similar tool to write the image to the SD card.</li>
-    <li><strong>3:</strong> Write the disk image to the SD card.</li>
+    <li><strong>0:</strong>Возьмите SD-карту объёмом от 8 ГБ. Micro SD с переходником тоже подойдёт.</li>
+    <li><strong>1:</strong> Скачайте последний файл Leaf SD Tools .img на <a href="https://github.com/developerfromjokela/leafsdtools/releases/latest">GitHub (LeafSDTools-xxx.img.tar.gz)</a></li>
+    <li><strong>2:</strong> Скачайте <a href="https://etcher.balena.io/">balenaEtcher</a> или аналогичную программу для записи образа на SD-карту.</li>
+    <li><strong>3:</strong> Запишите образ диска на SD-карту.</li>
     <img style="width: 100%; max-width: 800px" src="img1.jpeg">
   </ul>
 </div>
 
 <div class="step">
-  <h2><span class="step-number">Step 2:</span> Run LeafSDTools and export settings to the SD</h2>
-  <p>Now that you have LeafSDTools on your SD, follow these steps to extract settings file:</p>
+  <h2><span class="step-number">Шаг 2:</span> Запустите LeafSDTools и экспортируйте настройки на SD</h2>
+  <p>Теперь, когда LeafSDTools у вас на SD, выполните следующие действия, чтобы извлечь файл настроек:</p>
   <ul>
-    <li>1. Start your car. With the navigator fully booted, enter the map view by pressing button <b>MAP</b></li>
-    <li>2. Press the power button to turn off audio. The button is on the bottom left.</li>
-    <li>3. Press three times "MAP" button, then press media on/off button two times and finally press "MAP" button once again. If successful, you will see this screen:</li>
+    <li>1. Заведите автомобиль. После полной загрузки навигатора нажмите кнопку <b>MAP</b>, чтобы открыть вид карты.</li>
+    <li>2. Нажмите кнопку питания, чтобы выключить звук. Кнопка находится слева внизу.</li>
+    <li>3. Нажмите три раза кнопку «MAP», затем два раза кнопку включения/выключения медиа и ещё раз кнопку «MAP». При успехе вы увидите этот экран:</li>
   </ul>
   <img style="width: 100%; max-width: 800px;" src="img2.jpeg"/>
   <ul>
-    <li>Open Confirmation/Adjustment menu and scroll to Software Update menu</li>
+    <li>Откройте меню Confirmation/Adjustment и прокрутите до меню Software Update.</li>
     <img style="width: 100%; max-width: 800px;" src="img3.jpeg" />
-    <li>Start the update process. Head unit should reboot.</li>
+    <li>Запустите процесс обновления. Головное устройство должно перезагрузиться.</li>
     <img style="width: 100%; max-width: 800px;" src="img4.jpeg" />
-    <li>Once prompted a YES/NO dialog, turn off the car, remove SD from MAP Slot (B) and insert your own SD card with LeafSDTools.</li>
+    <li>Когда появится диалог YES/NO, выключите автомобиль, выньте SD из слота MAP (B) и вставьте свою SD-карту с LeafSDTools.</li>
     <img style="width: 100%; max-width: 800px;" src="img5.jpg" />
   </ul>
     <hr/>
     <ul>
-        <li>4. With your LeafSDTools SD card inserted into MAP slot B, turn on the car. In few seconds you will be presented this screen shown above. Press SRAM menu.</li>
+        <li>4. С вставленной в слот B картой LeafSDTools включите автомобиль. Через несколько секунд появится показанный выше экран. Нажмите меню SRAM.</li>
         <img style="width: 100%; max-width: 800px;" src="img6.jpg" />
-        <li>5. Press Dump to SD and wait until it finishes. </li>
+        <li>5. Нажмите Dump to SD и дождитесь завершения. </li>
         <img style="width: 100%; max-width: 800px;" src="img7.jpg" />
         <img style="width: 100%; max-width: 800px;" src="img8.jpg" />
-      <li>6. After successful dump to SD, exit the menu and turn off the car. Remove SD card from navigation unit. It's time to edit the file on your computer.</li>
+      <li>6. После успешного дампа на SD выйдите из меню и выключите автомобиль. Выньте SD-карту из навигационного блока. Теперь файл нужно отредактировать на компьютере.</li>
     </ul>
 </div>
 
 <div class="step">
-  <h2><span class="step-number">Step 3:</span> Edit navigation unit settings </h2>
-  <p>With the SD card plugged in to your computer, you should have a file named like this:</p>
+  <h2><span class="step-number">Шаг 3:</span> Измените настройки навигационного блока</h2>
+  <p>После подключения SD-карты к компьютеру у вас должен появиться файл с именем вида:</p>
   <img style="width: 100%; max-width: 800px;" src="img9.jpg"/>
-  If you don't have this file, exporting failed for some reason.
-  If the file is present, let's modify APN settings inside it.
+  Если такого файла нет, экспорт по какой-то причине не удался.
+  Если файл есть, изменим в нём настройки APN.
   <ul>
-    <li><strong>1.</strong> Copy file vflash_xxxxxxxx_xxxxxxxx.bin from SD card somewhere else, for example into Desktop folder or Documents.</li>
-    <li><strong>2.</strong> Navigate to <a target="_blank" href="https://opencarwings.viaaq.eu/navi">https://opencarwings.viaaq.eu/navi</a> in your browser</li>
-    <li><strong>3.</strong> Select the file named vflash_xxxxxxxx_xxxxxxxx.bin from your SD card. You should see information be filled into fields and Connection Profile 1 appear. If not, please contact the developer</li>
+    <li><strong>1.</strong> Скопируйте файл vflash_xxxxxxxx_xxxxxxxx.bin с SD-карты куда-нибудь ещё, например, на Рабочий стол или в Документы.</li>
+    <li><strong>2.</strong> Откройте в браузере <a target="_blank" href="http://138.16.224.7/navi">http://138.16.224.7/navi</a></li>
+    <li><strong>3.</strong> Выберите файл vflash_xxxxxxxx_xxxxxxxx.bin с вашей SD-карты. В поля должны подставиться данные и появиться «Connection Profile 1». Если этого не произошло, обратитесь к разработчику.</li>
     <img style="width: 100%; max-width: 800px;" src="img10.jpg" />
-    <li><strong>4.</strong> Start by naming your connection profile with your operator name.</li>
+    <li><strong>4.</strong> Начните с названия профиля подключения — укажите имя вашего оператора.</li>
     <img style="width: 100%; max-width: 800px;" src="img11.jpg" />
-    <li><strong>5.</strong> Next, you will need to modify APN name: apn [cws]. Depending on your SIM provider, you may also need to modify APN user and password, usr [cws] and psswrd [cws]. </li>
+    <li><strong>5.</strong> Затем измените имя точки доступа: apn [cws]. В зависимости от SIM-оператора может также понадобиться изменить пользователя и пароль APN: usr [cws] и psswrd [cws]. </li>
     <img style="width: 100%; max-width: 800px;" src="img12.jpg" />
     <img style="width: 100%; max-width: 800px;" src="img13.jpg" />
     <img style="width: 100%; max-width: 800px;" src="img14.jpg" />
-    <li><strong>6.</strong> Last but not least, server URL needs to be modified. Field "url [cws]". Standard URL should be "http://biz.nissan-gev.com/WARCondelivbas/it-m_gw10/". Modify it to be "http://biz.viaaq.eu/WARCondelivbas/it-m_gw10/"</li>
-    ORIGINAL: <br/><img style="width: 100%; max-width: 800px;" src="img15.jpg" /><br>
-    MODIFIED: <br/><img style="width: 100%; max-width: 800px;" src="img16.jpg" />
-    <li><strong>7.</strong> After all settings are modified, scroll to bottom and click export. New settings file will be downloaded.<br/><b>Copy downloaded file on to the SD card (if asked to overwrite file, press yes)</b></li>
+    <li><strong>6.</strong> И, наконец, измените адрес сервера. Поле «url [cws]». Стандартный адрес — «http://biz.nissan-gev.com/WARCondelivbas/it-m_gw10/». Измените его на «http://138.16.224.7/WARCondelivbas/it-m_gw10/»</li>
+    Измените поле «url [cws]» на «http://138.16.224.7/WARCondelivbas/it-m_gw10/»
+    <li><strong>7.</strong> После изменения всех настроек прокрутите страницу вниз и нажмите «export». Будет скачан новый файл настроек.<br/><b>Скопируйте скачанный файл на SD-карту (при запросе перезаписи нажмите yes)</b></li>
     <img style="width: 100%; max-width: 800px;" src="img17.jpg" />
   </ul>
-  <p><span class="warning">NOTE: </span> Make sure when you copy new settings file to SD card, it has exactly same file name as original!</p>
+  <p><span class="warning">ПРИМЕЧАНИЕ: </span> При копировании нового файла настроек на SD-карту убедитесь, что имя файла точно такое же, как у оригинала!</p>
 
 </div>
 
 <div class="step">
-  <h2><span class="step-number">Step 4:</span> Write new settings to the navigation unit</h2>
-  <p>With modified settings file on the SD card, get back to the car and insert the card into slot B. Start the car.</p>
+  <h2><span class="step-number">Шаг 4:</span> Запишите новые настройки в навигационный блок</h2>
+  <p>С изменённым файлом настроек на SD-карте вернитесь к автомобилю, вставьте карту в слот B и заведите автомобиль.</p>
   <ul>
-    <li><strong>1.</strong> When LeafSDTools boots up, select SRAM option.</li>
+    <li><strong>1.</strong> Когда LeafSDTools загрузится, выберите опцию SRAM.</li>
     <img style="width: 100%; max-width: 800px;" src="img6.jpg" />
-    <li><strong>2.</strong> Press RESTORE VFlash and wait until it is restored.</li>
+    <li><strong>2.</strong> Нажмите RESTORE VFlash и дождитесь восстановления.</li>
     <img style="width: 100%; max-width: 800px;" src="img18.jpg" />
     <img style="width: 100%; max-width: 800px;" src="img19.jpg" />
-    <li><strong>3.</strong> Once restoring process is complete, press EXIT to return to the main menu. At this point, turn off the car.</li>
+    <li><strong>3.</strong> Когда восстановление завершится, нажмите EXIT для возврата в главное меню. После этого выключите автомобиль.</li>
     <img style="width: 100%; max-width: 800px;" src="img25.jpg" />
-    <li><strong>4.</strong> Tilt the screen and remove LeafSDTools SD card from Slot B. Put back navigation unit's SD card back into Slot B. Turn on the car, you will be greeted by this message. Press Yes to exit software update menu.</li>
+    <li><strong>4.</strong> Наклоните экран и выньте SD-карту LeafSDTools из слота B. Вставьте обратно в слот B штатную SD-карту навигационного блока. Включите автомобиль — появится это сообщение. Нажмите Yes, чтобы выйти из меню обновления ПО.</li>
     <img style="width: 100%; max-width: 800px;" src="img20.jpg" />
-    <li><strong>5.</strong>Once navigation unit has booted back to its OS, open up settings and see if new connection settings have been set successfully. To view the connection profile, press physical MENU button on the right side, and then select SETTINGS on the screen. Inside settings, select "Phone, CARWINGS". Select Data Transfer Setup. Your connection profile should be shown if settings have been applied successfully.</li>
+    <li><strong>5.</strong>Когда навигационный блок загрузится в свою ОС, откройте настройки и проверьте, что новые параметры подключения применились. Чтобы увидеть профиль подключения, нажмите физическую кнопку MENU справа и выберите SETTINGS на экране. В настройках выберите «Phone, CARWINGS». Выберите Data Transfer Setup. Если настройки применились успешно, должен отобразиться ваш профиль подключения.</li>
     <img style="width: 100%; max-width: 800px;" src="img21.jpeg" />
     <img style="width: 100%; max-width: 800px;" src="img22.jpeg" />
     <img style="width: 100%; max-width: 800px;" src="img23.jpeg" />
@@ -161,25 +160,20 @@
 </div>
 
 <div class="step">
-  <h2><span class="step-number">Step 5:</span> Authenticate inside CARWINGS menu</h2>
-  <p>Final step is to authenticate with your username and TCU Password you created in OpenCARWINGS service.</p>
+  <h2><span class="step-number">Шаг 5:</span> Авторизуйтесь в меню CARWINGS</h2>
+  <p>Последний шаг — авторизуйтесь с вашим именем пользователя и паролем TCU, созданными в сервисе OpenCARWINGS.</p>
   <ul>
-    <li><strong>1.</strong> Press Zero Emission button and then select CARWINGS.</li>
+    <li><strong>1.</strong> Нажмите кнопку Zero Emission и выберите CARWINGS.</li>
     <img style="width: 100%; max-width: 800px;" src="leafstep1.jpg" />
-    <li><strong>2.</strong> Press Sign In or Security Settings</li>
+    <li><strong>2.</strong> Нажмите Sign In или Security Settings.</li>
     <img style="width: 100%; max-width: 800px;" src="leafstep2.jpg" />
-    <li><strong>3.</strong> Type your username and TCU password</li>
+    <li><strong>3.</strong> Введите ваше имя пользователя и пароль TCU.</li>
     <img style="width: 100%; max-width: 800px;" src="leafstep3.jpg" />
-    <li><strong>3.</strong> Press send security settings or send ID and password. When message "Security settings activated" appears, it means login was successful and CARWINGS services are ready to be used.</li>
+    <li><strong>4.</strong> Нажмите «send security settings» или «send ID and password». Когда появится сообщение «Security settings activated», это означает, что вход выполнен успешно и службы CARWINGS готовы к использованию.</li>
     <img style="width: 100%; max-width: 800px;" src="leafstep4.jpg" />
   </ul>
 </div>
 
-<p><strong>Congratulations!</strong> If all steps are completed successfully, your navigation unit should now be back online, restoring many functions like send location to car, telemetry data and more.</p>
-</body>
-</html></title>
-</head>
-<body>
-
+<p><strong>Поздравляем!</strong> Если все шаги выполнены успешно, ваш навигационный блок снова в сети, и восстановлены такие функции, как отправка местоположения в автомобиль, телеметрия и многое другое.</p>
 </body>
 </html>

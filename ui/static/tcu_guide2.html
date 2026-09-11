@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guide: Bringing 2016-2020 TCU Back Online</title>
+    <title>Инструкция: подключение TCU к сети (2016–2020)</title>
     <style>
         html {
             display: flex;
@@ -49,7 +49,7 @@
         }
         .video-container {
             position: relative;
-            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            padding-bottom: 56.25%;
             height: 0;
             overflow: hidden;
             max-width: 100%;
@@ -70,118 +70,116 @@
     </style>
 </head>
 <body>
-    <h1>Guide: Bringing Your TCU Back Online (2016-2020)</h1>
-    <p style="text-align: center"><span class="warning">NOTE: This guide is for 24/30 kWh 2016-17 MY and ZE1 40 kWh 2018-20 MY. For ZE0 and AZE0 before 2016, please refer to <a href="/static/tcu_guide.html">this guide</a>.</span> <br/>
+    <h1>Инструкция: возвращение TCU в сеть (2016–2020)</h1>
+    <p style="text-align: center"><span class="warning">ВАЖНО: Эта инструкция для 24/30 кВт·ч 2016–17 г.в. и ZE1 40 кВт·ч 2018–20 г.в. Для ZE0 и AZE0 до 2016 года используйте <a href="/static/tcu_guide.html">эту инструкцию</a>.</span> <br/>
     <div class="step">
-        <h2 style="color: red">Don't have the tools or the skill? Our partners can do the repair for you!</h2>
-        <p>Starting from 39 €, our repair partners offer a ready-to-go repair solution for LEAF TCUs, at an affordable price, with a 3-year warranty. No need to follow this guide. Each TCU is repaired, tested, and verified before dispatch. <br/>Check out our partners:
+        <h2 style="color: red">Нет инструмента или навыков? Наши партнёры сделают ремонт за вас!</h2>
+        <p>От 39 € наши партнёры предлагают готовое решение по ремонту TCU для LEAF по доступной цене и с гарантией 3 года. Следовать этой инструкции не нужно. Каждый TCU ремонтируется, тестируется и проверяется перед отправкой. <br/>Наши партнёры:
             <ul>
-                <li><a href="https://shop.viaaq.eu/product/nissan-leaf-tcu-repair-sim-holder-installation-sim-plan-and-configuration/">viaaq workshop (mail-in repair and repaired TCUs in stock)</a></li>
+                <li><a href="https://shop.viaaq.eu/product/nissan-leaf-tcu-repair-sim-holder-installation-sim-plan-and-configuration/">мастерская viaaq (ремонт по почте и готовые TCU в наличии)</a></li>
             </ul>
         </p>
     </div>
-    <p><b>Difficulty:</b> <span style="color: red">Difficult</span></p>
+    <p><b>Сложность:</b> <span style="color: red">Высокая</span></p>
     <div class="step">
-        <h2><span class="step-number">Step 1:</span> Obtain a SIM Card (or two)</h2>
-        <p>You’ll need a SIM card to enable cellular connectivity for the TCU. Here’s how to proceed:</p>
+        <h2><span class="step-number">Шаг 1:</span> Получите SIM-карту (или две)</h2>
+        <p>Для сотовой связи TCU нужна SIM-карта. Как действовать:</p>
         <ul>
-            <li><strong>Recommended Provider:</strong> SIM card from provider <a href="https://mobile.viaaq.eu/" target="_blank">viaaq mobile</a>, out-of-the-box integration with OpenCARWINGS, an affordable data plan, and support for Binary SMS</li>
-            <li><strong>SIM Type:</strong> Ensure it’s a standard Mini SIM (2FF) or compatible with an adapter.</li>
-            <li><strong>Data Plan:</strong> Select a plan with at least 1-5 MB of monthly data without a navigation unit, or 5-10 MB of monthly data with a navigation unit (the navigation unit does periodic updates of nearby charging stations).</li>
-            <li><strong>Alternative Providers:</strong> If viaaq mobile isn’t available or isn't suitable for you, use a provider with affordable data and SMS support (e.g., AT&T, T-Mobile prepaid SIMs), but you will need a way to send Binary SMS via the internet, such as Seven.io, gatewaysms, the OpenCARWINGS SMS gateway, or a similar solution or your own webhook-based setup.</li>
-            <li><strong>Why a second SIM card may be necessary:</strong> A second SIM may be required for sending SMS. This usually involves using a USB modem, as explained below.</li>
+            <li><strong>Рекомендуемый оператор:</strong> SIM-карта от оператора <a href="https://mobile.viaaq.eu/" target="_blank">viaaq mobile</a> — готовая интеграция с OpenCARWINGS, доступный тариф и поддержка бинарных SMS.</li>
+            <li><strong>Тип SIM:</strong> Обычная Mini SIM (2FF) или совместимая с переходником.</li>
+            <li><strong>Тариф:</strong> Выберите план с минимум 1–5 МБ данных в месяц без навигатора, или 5–10 МБ в месяц с навигатором (навигатор периодически обновляет данные о зарядных станциях поблизости).</li>
+            <li><strong>Альтернативные операторы:</strong> Если viaaq mobile недоступен или не подходит, используйте оператора с дешёвым тарифом и SMS (например, prepaid AT&T, T-Mobile), но тогда понадобится способ отправки бинарных SMS через интернет — Seven.io, gatewaysms, SMS-шлюз OpenCARWINGS или аналогичное решение на основе своего webhook.</li>
+            <li><strong>Зачем может понадобиться вторая SIM-карта:</strong> Вторая SIM может требоваться для отправки SMS. Обычно это USB-модем, как описано ниже.</li>
         </ul>
-        <p><span class="warning">IMPORTANT REQUIREMENT:</span> Your SIM in the TCU needs to be able to receive Binary SMS (no UDH)! However, not all SMS providers support binary SMS messages, especially when sent from abroad, which are sometimes marked as spam. Be prepared to use the <a href="https://github.com/developerfromjokela/opencarwings-sms">OpenCARWINGS SMS Gateway</a> with a modem, in case your provider blocks incoming SMS from online SMS gateways.</p>
+        <p><span class="warning">ВАЖНОЕ ТРЕБОВАНИЕ:</span> SIM в TCU должна уметь принимать бинарные SMS (без UDH)! Однако не все SMS-провайдеры поддерживают бинарные SMS, особенно при отправке из-за рубежа (их иногда помечают как спам). Будьте готовы использовать <a href="https://github.com/developerfromjokela/opencarwings-sms">SMS-шлюз OpenCARWINGS</a> с модемом, если ваш оператор блокирует входящие SMS из онлайн-шлюзов.</p>
     </div>
 
     <div class="step">
-        <h2><span class="step-number">Step 2:</span> Access the TCU</h2>
-        <p>The TCU is typically located behind the glovebox on RHD models (the physical location is the same on LHD cars) in the Nissan LEAF. Follow these steps:</p>
+        <h2><span class="step-number">Шаг 2:</span> Получите доступ к TCU</h2>
+        <p>В Nissan LEAF TCU обычно находится за перчаточным ящиком (расположение одинаково у праворульных и леворульных машин). Действия:</p>
         <ul>
-            <li><strong>Tools Needed:</strong> Phillips screwdriver, plastic trim removal tool (to avoid scratching), flashlight.</li>
-            <li><strong>Preparation:</strong> Turn off the vehicle and remove the key from the ignition to avoid electrical issues.</li>
-            <li><strong>Glovebox Removal:</strong>
+            <li><strong>Инструменты:</strong> Крестовая отвёртка, пластиковая лопатка для снятия панелей (чтобы не поцарапать), фонарик.</li>
+            <li><strong>Подготовка:</strong> Выключите автомобиль и выньте ключ из замка зажигания, чтобы избежать проблем с электрикой.</li>
+            <li><strong>Снятие перчаточного ящика:</strong>
                 <ol>
-                    <li>Open the glovebox and empty its contents.</li>
-                    <li>Locate and remove the screws (usually 2-4) along the edges or inside the glovebox.</li>
-                    <li>Gently pull the glovebox forward; it may be held by clips—use the trim tool to pry it loose if needed.</li>
-                    <li>Disconnect any wiring (e.g., glovebox light) by pressing the connector tabs and pulling.</li>
+                    <li>Откройте перчаточный ящик и освободите его.</li>
+                    <li>Найдите и открутите винты (обычно 2–4) по краям или внутри ящика.</li>
+                    <li>Аккуратно потяните ящик на себя; он может держаться на клипсах — при необходимости подденьте лопаткой.</li>
+                    <li>Отключите проводку (например, подсветку ящика), нажав на фиксаторы разъёма и потянув.</li>
                 </ol>
             </li>
-            <li><strong>Locate the TCU:</strong> Behind the glovebox, you’ll see a rectangular metal or plastic unit (about the size of a small book) with wiring harnesses and an antenna connection—this is the TCU.</li>
-            <li><strong>Visual Guide:</strong> Watch this YouTube video for a step-by-step disassembly:</li>
+            <li><strong>Найдите TCU:</strong> За перчаточным ящиком вы увидите прямоугольный металлический или пластиковый блок (размером с небольшую книгу) с жгутами проводов и разъёмом антенны — это и есть TCU.</li>
+            <li><strong>Наглядная инструкция:</strong> Посмотрите это видео на YouTube с пошаговой разборкой:</li>
         </ul>
-        <p>Disassembly (1:50 - 7:50)</p>
+        <p>Разборка (1:50 – 7:50)</p>
         <div class="video-container">
             <iframe src="https://www.youtube.com/embed/wHmqdXGBdrg?start=109" frameborder="0" allowfullscreen></iframe>
         </div>
-        <p><span class="warning">Note:</span> Work carefully to avoid damaging clips or wiring. Take photos of the setup before proceeding, for reference.</p>
+        <p><span class="warning">Примечание:</span> Работайте аккуратно, чтобы не повредить клипсы и проводку. Перед разборкой сфотографируйте всё, чтобы потом собрать в правильном порядке.</p>
     </div>
 
     <div class="step">
-        <h2><span class="step-number">Step 3:</span> Disassemble TCU, desolder eUICC chip and solder SIM Slot</h2>
-        <p>The TCU is easily disassembled; it's held together with a few plastic clips accessible from the outside.</p>
+        <h2><span class="step-number">Шаг 3:</span> Разберите TCU, выпаяйте eUICC и впаяйте SIM-слот</h2>
+        <p>TCU легко разбирается; он держится на нескольких пластиковых клипсах снаружи.</p>
         <hr/>
-        <p>Tools required: Microsoldering station (heat gun), soldering iron, SIM card holder, and (ideally) flux for soldering</p>
-        <p>Full Step-By-Step Soldering Guide Available <a href="https://github.com/developerfromjokela/nissan-leaf-tcu/blob/master/gen2/SIMSLOT.md" target="_blank">on Github</a></p>
+        <p>Инструменты: станция микропайки (фен), паяльник, держатель SIM-карты и (желательно) флюс для пайки</p>
+        <p>Полная пошаговая инструкция по пайке доступна <a href="https://github.com/developerfromjokela/nissan-leaf-tcu/blob/master/gen2/SIMSLOT.md" target="_blank">на GitHub</a></p>
     </div>
 
     <div class="step">
-        <h2><span class="step-number">Step 4:</span> Program the settings</h2>
-        <p>The Access Point Name (APN) and server information must be configured for the TCU to connect to the cellular network. Use an Android app:</p>
+        <h2><span class="step-number">Шаг 4:</span> Настройте параметры</h2>
+        <p>Имя точки доступа (APN) и адрес сервера должны быть настроены для подключения TCU к сотовой сети. Используйте Android-приложение:</p>
         <ul>
-            <li><strong>Download the App:</strong> Get the TCU Configurator app from GitHub: <a href="https://github.com/developerfromjokela/nissan-leaf-tcu/releases/latest" target="_blank">tcu-configurator-xx.apk</a>.</li>
-            <li><strong>Install the App:</strong>
+            <li><strong>Скачайте приложение:</strong> Конфигуратор TCU с GitHub: <a href="https://github.com/developerfromjokela/nissan-leaf-tcu/releases/latest" target="_blank">tcu-configurator-xx.apk</a>.</li>
+            <li><strong>Установите приложение:</strong>
                 <ol>
-                    <li>Transfer the .apk file to your Android device (via USB, email, etc.).</li>
-                    <li>Enable “Install from Unknown Sources” in Settings > Security.</li>
-                    <li>Open the file and install the app.</li>
+                    <li>Перенесите файл .apk на Android-устройство (USB, e-mail и т.п.).</li>
+                    <li>Разрешите «Установку из неизвестных источников» в Настройки > Безопасность.</li>
+                    <li>Откройте файл и установите приложение.</li>
                 </ol>
             </li>
-            <li><strong>Connect to TCU:</strong> Power on the vehicle to ACC mode (important). Use the app to connect to the TCU via Bluetooth OBD.</li>
-            <li><strong>Set APN (also the TSP APN):</strong>
+            <li><strong>Подключение к TCU:</strong> Включите зажигание в режим ACC (важно!). В приложении подключитесь к TCU через Bluetooth OBD.</li>
+            <li><strong>Настройте APN (и TSP APN):</strong>
                 <ol>
-                    <li>Open the app and locate the APN settings.</li>
-                    <li>Enter the APN for your SIM provider (e.g., almost all Finnish operators use “internet”; viaaq mobile shows the APN in the subscription details; check your provider’s website for specifics).</li>
-                    <li>Save and apply the settings.</li>
+                    <li>Откройте приложение и найдите настройки APN.</li>
+                    <li>Введите APN вашего оператора (например, почти у всех финских операторов это «internet»; у viaaq mobile APN указан в деталях подписки; уточните на сайте оператора).</li>
+                    <li>Сохраните и примените настройки.</li>
                 </ol>
             </li>
-            <li><strong>Set Server Hostname (GDC and APN):</strong>
+            <li><strong>Настройте адрес сервера (GDC и APN):</strong>
                 <ol>
-                    <li>Enter the server URL in the TCU Configurator app.</li>
-                    <li>Server information:
+                    <li>Введите URL сервера в приложении-конфигураторе TCU.</li>
+                    <li>Данные сервера:
                         <ul>
-                            <li>URL: <b>http://biz-tcu.viaaq.eu</b></li>
-                            <li>Port: <b>80</b></li>
+                            <li>URL: <b>http://138.16.224.7</b></li>
+                            <li>Порт: <b>80</b></li>
                         </ul>
                     </li>
-                    <li>Save and apply the settings.</li>
+                    <li>Сохраните и примените настройки.</li>
                 </ol>
             </li>
         </ul>
-        <p><span class="warning">Note:</span> Ensure your Android device has Bluetooth enabled and the car ignition is turned to ACC during configuration.</p>
-        <p><span class="warning">Note:</span> If you have trouble reading the configuration of the TCU, turn off the Data Integrity Check in the TCU Configurator app.</p>
+        <p><span class="warning">Примечание:</span> Убедитесь, что Bluetooth включён на Android-устройстве, а зажигание автомобиля переведено в режим ACC во время настройки.</p>
+        <p><span class="warning">Примечание:</span> Если при чтении конфигурации TCU возникают проблемы, отключите «Data Integrity Check» в приложении-конфигураторе.</p>
     </div>
 
     <div class="step">
-        <h2><span class="step-number">Step 5:</span> Complete Setup on Website</h2>
-        <p>Complete the TCU setup via a web portal: sign in to OpenCARWINGS and follow the "Add Car" process.</p>
+        <h2><span class="step-number">Шаг 5:</span> Завершите регистрацию на сайте</h2>
+        <p>Завершите настройку TCU через веб-портал: войдите в OpenCARWINGS и выполните процедуру «Add Car» (добавить автомобиль).</p>
     </div>
 
     <div class="step">
-        <h2><span class="step-number">Step 6:</span> Configure your preferred SMS provider</h2>
-        <p>Finalize the TCU activation by setting up an SMS provider in OpenCARWINGS settings:</p>
+        <h2><span class="step-number">Шаг 6:</span> Настройте SMS-провайдера</h2>
+        <p>Завершите активацию TCU, настроив SMS-провайдера в настройках OpenCARWINGS:</p>
         <ul>
-            <li><strong>Binary SMS:</strong> The providers shown in settings are limited to those capable of sending Binary SMS.</li>
-            <li><strong>For OpenCARWINGS SMS:</strong> Set up your Raspberry Pi/computer/server to act as a relay; the latest releases are available at <a href="https://github.com/developerfromjokela/opencarwings-sms">https://github.com/developerfromjokela/opencarwings-sms</a>. (Android is not supported.)</li>
-            <li><strong>Verify:</strong> Do a data refresh to confirm the TCU is receiving SMS.</li>
+            <li><strong>Бинарные SMS:</strong> Провайдеры в настройках ограничены теми, кто умеет отправлять бинарные SMS.</li>
+            <li><strong>Для SMS-шлюза OpenCARWINGS:</strong> Настройте Raspberry Pi/компьютер/сервер в качестве ретранслятора; свежие версии на <a href="https://github.com/developerfromjokela/opencarwings-sms">https://github.com/developerfromjokela/opencarwings-sms</a>. (Android не поддерживается.)</li>
+            <li><strong>Проверка:</strong> Сделайте обновление данных, чтобы убедиться, что TCU получает SMS.</li>
         </ul>
-        <p><span class="warning">Note:</span> Please clear all DTC codes before trying to send SMS! Active DTC codes may put the TCU into fault mode, causing it to refuse any commands.</p>
-        <p><span class="warning">Be aware:</span> In rare cases, TCU services have been remotely disabled by Nissan, for unknown reasons. In this case, sending refresh commands won't do anything. You may need to send the "Service Provisioning" configuration command from the "TCU Configuration" tab, with all services set to "Active." Then try sending the refresh command again.</p>
+        <p><span class="warning">Примечание:</span> Обязательно сотрите все коды DTC перед отправкой SMS! Активные коды DTC могут перевести TCU в аварийный режим, и он будет отказываться выполнять команды.</p>
+        <p><span class="warning">Внимание:</span> В редких случаях услуги TCU были удалённо отключены Nissan без видимых причин. В этом случае отправка команд обновления не даёт результата. Отправьте команду конфигурации «Service Provisioning» со вкладки «TCU Configuration» с включёнными всеми службами («Active»), а затем попробуйте снова.</p>
     </div>
 
-
-
-    <p><strong>Congratulations!</strong> If all steps are completed successfully, your TCU should now be back online, restoring telematics functionality to your vehicle. <a href="/static/navi_guide2.html">The next step would be programming APN settings for the navigation unit.</a> </p>
+    <p><strong>Поздравляем!</strong> Если все шаги выполнены успешно, ваш TCU снова в сети, и телематика автомобиля восстановлена. <a href="/static/navi_guide2.html">Следующий шаг — настройка APN для навигационного блока.</a></p>
 </body>
 </html>

@@ -31,6 +31,11 @@
             {% endif %}
         </div>
         <h1 class="text-3xl font-semibold text-gray-800 dark:text-gray-200 mb-6 flex items-center">{% translate "My cars" %} <a href="/setup/step1" class="ml-2 px-2 py-1 text-xs font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300">{% translate "Add" %}</a></h1>
+        <div class="mb-6 flex flex-wrap gap-2">
+            <a href="/static/navi_guide2.html" target="_blank" class="px-3 py-2 text-sm font-medium text-center text-white bg-gray-600 rounded-lg hover:bg-gray-800 focus:ring-4 focus:outline-none focus:ring-gray-300">Гайд по настройке магнитолы</a>
+            <a href="/static/tcu_guide2.html" target="_blank" class="px-3 py-2 text-sm font-medium text-center text-white bg-gray-600 rounded-lg hover:bg-gray-800 focus:ring-4 focus:outline-none focus:ring-gray-300">Гайд по настройке TCU</a>
+            <a href="/static/data_guide.html" target="_blank" class="px-3 py-2 text-sm font-medium text-center text-white bg-gray-600 rounded-lg hover:bg-gray-800 focus:ring-4 focus:outline-none focus:ring-gray-300">Гайд по каналу данных</a>
+        </div>
         <div class="space-y-4">
             {% for car in cars %}
                 <a href="{% url 'car_detail' car.vin %}" class="flex bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200">

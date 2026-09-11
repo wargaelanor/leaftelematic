@@ -1,9 +1,27 @@
-from dataclasses import dataclass
+import array
+import sys
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional, Tuple, List
 
+def _f32_to_bytes(value: float, little_endian: bool = True) -> bytes:
+    a = array.array("f", [value])
+    raw = a.tobytes()
+    if little_endian == (sys.byteorder == "little"):
+        return raw
+    return raw[::-1]
 
-def _encode_ie(value: str | bytes, ie_id=-1) -> bytes:
+
+def _f32_from_bytes(data: bytes, little_endian: bool = True) -> float:
+    raw = data[:4]
+    if little_endian != (sys.byteorder == "little"):
+        raw = raw[::-1]
+    a = array.array("f")
+    a.frombytes(raw)
+    return a[0]
+
+
+def _encode_ie(value: str | bytes, ie_id=-1, fill_length = 0) -> bytes:
     if isinstance(value, str):
         raw = value.encode('ascii')
         if ie_id == -1:
@@ -12,6 +30,12 @@ def _encode_ie(value: str | bytes, ie_id=-1) -> bytes:
         raw = value
         if ie_id == -1:
             ie_id = 0
+
+    # For fields like VehDesc fields, which expect specific exact length,
+    # fill rest with zeroes to match expected length
+    if fill_length > 0 and len(raw) < fill_length:
+        raw = raw + b'\x00' * (fill_length - len(raw))
+
     length = len(raw)
     more = 1 if length > 0x1F else 0
     if more:
@@ -93,29 +117,29 @@ class VehDesc:
 
         if self.vin:
             flags |= 0x20
-            content.extend(_encode_ie(self.vin))
+            content.extend(_encode_ie(self.vin, fill_length=0x11))
         if self.dcm:
             flags |= 0x10
-            content.extend(_encode_ie(self.dcm))
+            content.extend(_encode_ie(self.dcm, fill_length=0xc))
         if self.imei_msn:
             flags |= 0x01
-            content.extend(_encode_ie(self.imei_msn))
+            content.extend(_encode_ie(self.imei_msn, fill_length=0xf))
 
         if self.navi_id:
             ext_flags |= 0x40
-            content.extend(_encode_ie(self.navi_id))
+            content.extend(_encode_ie(self.navi_id, fill_length=0xc))
         if self.sim_id:
             ext_flags |= 0x20
-            content.extend(_encode_ie(self.sim_id))
+            content.extend(_encode_ie(self.sim_id, fill_length=0x14))
         if self.dcm_ver:
             ext_flags |= 0x10
-            content.extend(_encode_ie(self.dcm_ver))
+            content.extend(_encode_ie(self.dcm_ver, fill_length=0xa))
         if self.batt_id:
             ext_flags |= 0x02
-            content.extend(_encode_ie(self.batt_id))
+            content.extend(_encode_ie(self.batt_id, fill_length=0x20))
         if self.vehicle_type:
             ext_flags |= 0x01
-            content.extend(_encode_ie(self.vehicle_type))
+            content.extend(_encode_ie(self.vehicle_type, fill_length=4))
 
         if ext_flags:
             flags |= 0x80
@@ -435,4 +459,120 @@ class ACPConfigEncoder:
         body = b"".join(e.encode() for e in self.elements)
         return _encode_ie(body, ie_id=0)
 
+# ProbeConfig
 
+@dataclass
+class ProbeConfigItem:
+    data_id: int = 0
+    can_frame_id: int = 0
+    can_param_mask_0: int = 0
+    can_param_mask_1: int = 0
+    can_read_freq: int = 0
+    conversion_type: int = 0
+    field_0x13: int = 0
+    data_list_len: int = 0
+    a_parameter: float = 0.0
+    b_parameter: float = 0.0
+    c_parameter: float = 0.0
+    d_parameter: float = 0.0
+    unavailable: int = 0
+    padding: int = 0
+
+    def to_config_bytes(self) -> bytes:
+        out = bytearray()
+        out += (self.data_id & 0xFFFF).to_bytes(2, "little")
+        out += b'\x00\x00'  # 2 bytes padding at 0x2
+        out += (self.can_frame_id & 0xFFFFFFFF).to_bytes(4, "little", signed=True)
+        out += (self.can_param_mask_0 & 0xFFFFFFFF).to_bytes(4, "little", signed=True)
+        out += (self.can_param_mask_1 & 0xFFFFFFFF).to_bytes(4, "little", signed=True)
+        out += (self.can_read_freq & 0xFFFF).to_bytes(2, "little")
+        out.append(self.conversion_type & 0xFF)
+        out.append(self.field_0x13 & 0xFF)
+        out.append(self.data_list_len & 0xFF)
+        out += b'\x00\x00\x00'
+        out += _f32_to_bytes(self.a_parameter, little_endian=True)
+        out += _f32_to_bytes(self.b_parameter, little_endian=True)
+        out += _f32_to_bytes(self.c_parameter, little_endian=True)
+        out += _f32_to_bytes(self.d_parameter, little_endian=True)
+        out += (self.unavailable & 0xFFFFFFFF).to_bytes(4, "little", signed=True)
+        out += (self.padding & 0xFFFFFFFF).to_bytes(4, "little")
+        return bytes(out)
+
+    @classmethod
+    def from_config_bytes(cls, data: bytes) -> "ProbeConfigItem":
+        if len(data) < 48:
+            raise ValueError("need at least 48 bytes for one ProbeConfigItem")
+        return cls(
+            data_id          = int.from_bytes(data[0:2],   "little"),
+            can_frame_id     = int.from_bytes(data[4:8],   "little", signed=True),
+            can_param_mask_0 = int.from_bytes(data[8:12],  "little", signed=True),
+            can_param_mask_1 = int.from_bytes(data[12:16], "little", signed=True),
+            can_read_freq    = int.from_bytes(data[16:18], "little"),
+            conversion_type  = data[18],
+            field_0x13       = data[19],
+            data_list_len    = data[20],
+            a_parameter      = _f32_from_bytes(data[24:28], little_endian=True),
+            b_parameter      = _f32_from_bytes(data[28:32], little_endian=True),
+            c_parameter      = _f32_from_bytes(data[32:36], little_endian=True),
+            d_parameter      = _f32_from_bytes(data[36:40], little_endian=True),
+            unavailable      = int.from_bytes(data[40:44], "little", signed=True),
+            padding          = int.from_bytes(data[44:48], "little"),
+        )
+
+def parse_config_file(data: bytes) -> List[ProbeConfigItem]:
+    if len(data) % 48 != 0:
+        raise ValueError(f"config-file size {len(data)} is not a multiple of 48")
+    return [
+        ProbeConfigItem.from_config_bytes(data[off:off + 48])
+        for off in range(0, len(data), 48)
+    ]
+
+@dataclass
+class ACPProbeConfig:
+    service_type: int = 0x50
+    records: List[ProbeConfigItem] = field(default_factory=list)
+
+    def encode(self) -> bytes:
+        if not self.records:
+            raise ValueError("at least one record is required")
+
+        out = bytearray()
+        out.append(self.service_type & 0xFF)
+
+        for item in self.records:
+            item_out = bytearray()
+            item_out += (item.data_id & 0xFFFF).to_bytes(2, "big")
+            item_out += (item.can_frame_id & 0xFFFFFF).to_bytes(3, "big")
+            item_out += (item.can_param_mask_0 & 0xFFFFFFFF).to_bytes(4, "big")
+            item_out += (item.can_param_mask_1 & 0xFFFFFFFF).to_bytes(4, "big")
+            item_out += (item.can_read_freq & 0xFFFF).to_bytes(2, "big")
+            item_out.append(item.conversion_type & 0xFF)  # 1 byte
+            item_out.append(item.field_0x13 & 0xFF)
+            item_out.append(item.data_list_len & 0xFF)
+            item_out += _f32_to_bytes(item.a_parameter, little_endian=False)
+            item_out += _f32_to_bytes(item.b_parameter, little_endian=False)
+            item_out += _f32_to_bytes(item.c_parameter, little_endian=False)
+            item_out += _f32_to_bytes(item.d_parameter, little_endian=False)
+            item_out += (item.unavailable & 0xFFFFFFFF).to_bytes(4, "big")
+            out += _encode_ie(item_out, 0)
+
+        return _encode_ie(out, 0)
+
+@dataclass
+class ACPProbeConfigRaw:
+    service_type: int = 0x50
+    records: List[bytes] = field(default_factory=list)
+
+    def encode(self) -> bytes:
+        if not self.records:
+            raise ValueError("at least one record is required")
+
+        out = bytearray()
+        out.append(self.service_type & 0xFF)
+
+        for item in self.records:
+            if len(item) != 0x30:
+                raise ACPComposeError("Config record length is not 0x30!")
+            out += _encode_ie(item, 0)
+
+        return _encode_ie(out, 0)

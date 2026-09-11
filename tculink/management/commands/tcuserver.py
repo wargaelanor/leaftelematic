@@ -514,7 +514,7 @@ class Command(BaseCommand):
                     # GDC packets are generally under 1024 bytes, limit to prevent spam
                     if len(data) < 1024:
                         logger.info("Response logged to file for analysis")
-                        dtnow = timezone.now().strftime("%Y-%m-%dT%H:%M:%S")
+                        dtnow = timezone.localtime().strftime("%Y-%m-%dT%H:%M:%S")
                         with open(f"logs/datalog-unknownmsg-{dtnow}.bin", "wb") as file:
                             file.write(data)
 

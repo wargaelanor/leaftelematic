@@ -28,6 +28,7 @@ from rest_framework.authentication import TokenAuthentication, SessionAuthentica
 from rest_framework_simplejwt.views import TokenRefreshView
 import api.views as api_views
 import tculink.views as tculink_views
+import tculink.custom_channels as custom_channels
 import ui.views as views
 from api.views import CustomTokenObtainPairView
 
@@ -60,6 +61,8 @@ urlpatterns = [
     path('setup/step4', views.setup_step4, name='setup_4'),
     path('setup/step5', views.setup_step5, name='setup_5'),
     path('navi', views.vflash_editor),
+    path('custom/<slug:name>/', custom_channels.handle_custom_channel_data, name='custom_channel'),
+    path('custom/<slug:name>', custom_channels.handle_custom_channel_data, name='custom_channel_alt'),
     path('WARCondelivbas/it-m_gw10/', tculink_views.carwings_http_gateway),
     path('ficosa/gdc', tculink_views.ficosa_http_gateway),
     path('signup', views.signup, name='car_list'),

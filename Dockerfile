@@ -25,7 +25,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 RUN apk add netcat-openbsd git
 
 # Install supercronic
-ARG TARGETARCH
+ARG TARGETARCH="amd64"
 ARG SUPERCRONIC_VERSION=v0.2.33
 
 RUN apk add --no-cache --virtual .fetch-deps curl ca-certificates && \
@@ -62,6 +62,7 @@ EXPOSE 55230
 # establish temporary bare config for making translations
 RUN cp /app/carwings/settings.example.py /app/carwings/settings.py
 RUN REDIS_HOST="" python manage.py compilemessages
-RUN rm /app/carwings/settings.py
 
 CMD ["bash", "/app/docker/start.sh"]
+
+

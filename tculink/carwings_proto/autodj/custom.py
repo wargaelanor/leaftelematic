@@ -34,6 +34,7 @@ def handle_custom_channel(xml_data, _, channel_id, car: Car, page):
     response_chdata = NOT_AVAIL_AUTODJ_ITEM
 
     send_payload = {
+        'vin': car.vin,
         'lang': carwings_lang_to_code(xml_data['base_info'].get('navigation_settings', {}).get('language', '')),
         'tz': xml_data['base_info'].get('navigation_settings', {}).get('time_zone', "+0.00"),
         'distance_unit': xml_data['base_info'].get('navigation_settings', {}).get('distance_display', "km"),

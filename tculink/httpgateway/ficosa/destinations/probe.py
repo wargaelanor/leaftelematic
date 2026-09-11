@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import random
@@ -23,6 +24,27 @@ def save_debug_data(tcu_gen, block, block_id, fulldata, req_id):
     file_path = os.path.join(log_dir, f"block-{block_id}-{req_id}.bin")
     with open(file_path, "wb") as f:
         f.write(block)
+
+
+def capture_extended(tcu_gen, probe_service, block_id, block_length, block_data):
+    """
+    Structured JSONL capture of new/unknown probe blocks (label 0x01 = extended
+    probe data of service 0x52 and new trip fields of service 0x51).
+    Keeps the data in a reverse-engineering corpus instead of dropping it.
+    """
+    log_dir = os.path.join("logs", "probev2", "extended", tcu_gen)
+    os.makedirs(log_dir, exist_ok=True)
+    file_path = os.path.join(log_dir, datetime.now().strftime('%Y%m%d') + ".jsonl")
+    entry = {
+        "ts": datetime.now().isoformat(),
+        "service": hex(probe_service),
+        "block_id": block_id,
+        "subtype": hex(block_data[1]),
+        "len": block_length,
+        "data": block_data.hex(),
+    }
+    with open(file_path, "a", encoding="utf-8") as f:
+        f.write(json.dumps(entry) + "\n")
 
 
 
@@ -77,6 +99,12 @@ def handle(bin_data: bytes, acp_data: dict, car: Car, source_id: int, destinatio
                         save_debug_data(tcu_gen, block_data, block_id, bin_data, unique_req_id)
                     except:
                         pass
+                    # new/unknown extended block - capture structured instead of dropping
+                    if block_data[0] == 0x01 and len(block_data) > 1:
+                        try:
+                            capture_extended(tcu_gen, probe_service, block_id, block_length, block_data)
+                        except Exception:
+                            logger.exception("Failed to capture extended block")
                 else:
                     # skip element 0xb9, it is somewhat different and not parsing right
                     if block_data[0] != 0xb9:
