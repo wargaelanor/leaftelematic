@@ -9,14 +9,21 @@ POSTs a JSON payload (lang, tz, distance_unit, temp_unit, lat/lon/speed/directio
 car_status when location shared, plus vin) and expects a JSON array of up to two
 "slides" per the Data Channel API format documented in /static/data_guide.html.
 """
+import base64
+import io
 import json
 import logging
 import time
+import urllib3
+import xml.etree.ElementTree as ET
+from datetime import date, timedelta
 
 import requests
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 from db.models import Car
 
@@ -445,7 +452,7 @@ def channel_alerts(payload):
         desc = code_map.get(wcode, "Weather condition unknown")
         temp = round(cur.get("temperature", 0))
         wind = round(cur.get("windspeed", 0))
-        text = (f"Current weather near you:\n{desc}, {temp}°C\n"
+        text = (f"Current weather near you:\n{desc}, {temp}??C\n"
                 f"Wind: {wind} km/h\n"
                 f"Updated: {cur.get('time', 'n/a')}")
         warn = ""
@@ -517,7 +524,311 @@ def channel_triplog(payload):
     return slides[:2]
 
 
+def _fetch(url, params=None, verify=True, encoding=None, timeout=12):
+    try:
+        r = requests.get(
+            url, params=params, timeout=timeout, verify=verify,
+            headers={"User-Agent": "Mozilla/5.0 (OpenCARWINGS head unit)"},
+        )
+        if r.status_code != 200:
+            logger.warning("fetch %s http %s", url, r.status_code)
+            return None
+        if encoding:
+            r.encoding = encoding
+        return r
+    except Exception as e:
+        logger.warning("fetch %s failed: %s", url, e)
+        return None
+
+
+def _tz_hours(payload):
+    try:
+        return float(payload.get("tz", "0"))
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _price_words(price):
+    rub = int(price)
+    kop = int(round((price - rub) * 100))
+    return f"{rub} ???????????? {kop:02d} ????????????".replace("???????????? 00", "????????????")
+
+
+# --------------------------------------------------------------------------
+# Electricity prices: Nordpool (as in developer's gist example channel)
+# --------------------------------------------------------------------------
+
+def channel_nordpool(payload):
+    """Day-ahead electricity prices from Nordpool, cheapest hours + chart,
+    mirrors the developer's PHP example (https://gist.github.com/...)."""
+    tz = _tz_hours(payload)
+    lang = payload.get("lang") or "en"
+    ru = lang == "ru"
+    zone = (payload.get("zone") or payload.get("_query", {}).get("z") or "FI").upper()
+    try:
+        vat = float(payload.get("_query", {}).get("vat") or 1.255)
+    except (TypeError, ValueError):
+        vat = 1.255
+
+    def day_points(offset):
+        d = (date.today() + timedelta(days=offset)).isoformat()
+        r = _fetch(
+            "https://dataportal-api.nordpoolgroup.com/api/DayAheadPrices",
+            params={"date": d, "market": "DayAhead", "deliveryArea": zone, "currency": "EUR"},
+            verify=False,
+        )
+        if r is None:
+            return None
+        try:
+            data = r.json()
+        except Exception:
+            return None
+        pts = []
+        for e in data.get("multiAreaEntries", []):
+            raw = e.get("entryPerArea", {}).get(zone)
+            if raw is None:
+                continue
+            try:
+                pts.append({
+                    "start": _iso_ts(e["deliveryStart"], tz),
+                    "end": _iso_ts(e["deliveryEnd"], tz),
+                    "price": raw * 0.1 * vat,
+                })
+            except Exception:
+                continue
+        return pts or None
+
+    label_en = {0: "today", 1: "tomorrow"}
+    slides = []
+    for off in (0, 1):
+        pts = day_points(off)
+        if not pts:
+            continue
+        pts.sort(key=lambda p: p["start"])
+        cheap = sorted(pts, key=lambda p: p["price"])[:8]
+        cheap.sort(key=lambda p: p["start"])
+        lines = []
+        for p in cheap:
+            if ru:
+                lines.append(f"{_hm(p['start'])}-{_hm(p['end'])}: {p['price']:.2f} ????????/??????????")
+            else:
+                lines.append(f"{_hm(p['start'])}-{_hm(p['end'])}: {p['price']:.2f} c/kWh")
+        cheapest = cheap[0]
+        if ru:
+            t2 = f"?????????????? ?????????? {_hm(cheapest['start'])}-{_hm(cheapest['end'])}, {cheapest['price']:.1f} ????????/??????????"
+            tts = (f"?????????? ?????????????? ???????? {label_en[off]} ??? "
+                   f"?? {_hm(cheapest['start'])} ???? {_hm(cheapest['end'])}, "
+                   f"?? ?????????????? {cheapest['price']:.1f} ???????????? ???? ????????????????-??????.")
+        else:
+            t2 = f"Cheapest {_hm(cheapest['start'])}-{_hm(cheapest['end'])}, {cheapest['price']:.1f} c/kWh"
+            tts = (f"The cheapest electricity {label_en[off]} is from "
+                   f"{_hm(cheapest['start'])} to {_hm(cheapest['end'])}, "
+                   f"on average {cheapest['price']:.1f} cents per kilowatt hour.")
+        slide = _slide(
+            title1="Nordpool" if not ru else "???????? ???? ??????????????????????????",
+            title2=t2,
+            title3="EUR, cents/kWh" if not ru else "???????? ?? ????????, ????????/??????????",
+            onscreen=("CHEAPEST PERIODS:\n" if not ru else "?????????? ?????????????? ????????:\n") + "\n".join(lines),
+            tts=tts,
+            bell=True,
+            save=True,
+        )
+        img = _price_chart(pts, f"{label_en[off].capitalize()} ({zone})")
+        if img and len(img) < 20000:
+            slide["img_base64"] = img
+        slides.append(slide)
+    if slides:
+        return slides
+    return [_slide(
+        title1="Nordpool", title2="Price service unavailable",
+        onscreen="Electricity price data could not be retrieved.",
+        tts="Electricity price data unavailable.",
+        bell=False, save=True,
+    )]
+
+
+def _iso_ts(value, tz):
+    import datetime as _dt
+    parts = value[:19].replace("T", " ")
+    try:
+        dt = _dt.datetime.strptime(parts, "%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        return 0
+    return int((dt + _dt.timedelta(hours=tz)).timestamp())
+
+
+def _hm(ts):
+    import datetime as _dt
+    return _dt.datetime.fromtimestamp(ts).strftime("%H:%M")
+
+
+def _price_chart(pts, title):
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+    except ImportError:
+        return ""
+    try:
+        W, H, M = 450, 270, 46
+        img = Image.new("RGB", (W, H), (255, 255, 255))
+        d = ImageDraw.Draw(img)
+        prices = [p["price"] for p in pts]
+        lo, hi = min(prices), max(prices)
+        span = (hi - lo) or 1.0
+        lo -= span * 0.1
+        hi += span * 0.1
+        span = hi - lo
+        t0 = pts[0]["start"]
+        t1 = pts[-1]["end"]
+        tr = max(t1 - t0, 1)
+        xs = [M + (p["start"] - t0) * (W - 2 * M) / tr for p in pts]
+        ys = [H - M - (p["price"] - lo) * (H - 2 * M) / span for p in pts]
+        d.line([(M, H - M), (W - M, H - M)], fill=(0, 0, 0))
+        d.line([(M, H - M), (M, M)], fill=(0, 0, 0))
+        d.text((4, 2), title, fill=(0, 0, 0))
+        d.text((4, H - M + 6), f"{lo:.1f}", fill=(0, 0, 0))
+        d.text((W - M - 30, H - M + 6), f"{hi:.1f}", fill=(0, 0, 0))
+        for i in range(len(pts) - 1):
+            d.line([(xs[i], ys[i]), (xs[i + 1], ys[i + 1])], fill=(0, 102, 204), width=2)
+        for x, y in zip(xs, ys):
+            d.ellipse((x - 3, y - 3, x + 3, y + 3), fill=(0, 102, 204))
+        buf = io.BytesIO()
+        img = img.convert("P", palette=Image.ADAPTIVE)
+        img.save(buf, "PNG", optimize=True)
+        return base64.b64encode(buf.getvalue()).decode("ascii")
+    except Exception as e:
+        logger.warning("chart failed: %s", e)
+        return ""
+
+
+# --------------------------------------------------------------------------
+# Currency exchange rates: Central Bank of Russia
+# --------------------------------------------------------------------------
+
+def channel_currency(payload):
+    """RUB exchange rates published by the Central Bank of Russia (CBR)."""
+    r = _fetch("http://www.cbr.ru/scripts/XML_daily.asp", encoding="windows-1251")
+    if r is None:
+        return [_slide(
+            title1="???????? ???? ????", title2="???????????? ????????????????????",
+            onscreen="?????????? ?????????? ???? ????????????????. ???????????????????? ??????????.",
+            tts="?????????? ?????????? ????????????????????.",
+            bell=False, save=True,
+        )]
+    try:
+        root = ET.fromstring(r.text)
+    except Exception as e:
+        logger.warning("cbr xml parse failed: %s", e)
+        return [_slide(
+            title1="???????? ???? ????", title2="???????????? ????????????????????",
+            onscreen="?????????? ?????????? ???? ????????????????.",
+            tts="?????????? ?????????? ????????????????????.",
+            bell=False, save=True,
+        )]
+    want = ("USD", "EUR", "CNY")
+    rates = {}
+    for val in root.iter("Valute"):
+        code = val.findtext("CharCode")
+        if code not in want:
+            continue
+        try:
+            nominal = int(val.findtext("Nominal") or "1")
+            value = float((val.findtext("Value") or "0").replace(",", "."))
+            rates[code] = value / nominal
+        except (ValueError, TypeError):
+            continue
+    date_str = root.findtext(".//ValCurs/Date") or root.get("Date") or ""
+    if not rates:
+        return [_slide(
+            title1="???????? ???? ????", title2="?????? ????????????",
+            onscreen="???????????? ???? ???? ????????????????.",
+            tts="?????????? ?????????? ????????????????????.",
+            bell=False, save=True,
+        )]
+    names = {"USD": "????????????", "EUR": "????????", "CNY": "????????"}
+    lines = []
+    for c in want:
+        if c in rates:
+            lines.append(f"{names[c]} ({c}): {rates[c]:.2f} ???")
+    t2 = " ?? ".join(f"{c} {rates[c]:.2f}" for c in want if c in rates)
+    tts_parts = [f"{names[c]} ??? {_price_words(rates[c])}" for c in want if c in rates]
+    return [_slide(
+        title1="???????? ???? ????",
+        title2=t2,
+        title3=f"???? {date_str}" if date_str else "???????? ???? ????",
+        onscreen=("???????? ???? ????\n" + date_str + "\n\n" + "\n".join(lines))[:1024],
+        tts=", ".join(tts_parts) + ".",
+        bell=False, save=True,
+    )]
+
+
+# --------------------------------------------------------------------------
+# Electricity price: Nizhny Novgorod region (RUS day-ahead market, zone 1)
+# --------------------------------------------------------------------------
+
+def channel_energy_ru(payload):
+    """Consumer day-ahead price for price zone 1 (European Russia, incl.
+    Nizhny Novgorod region) from ATS: /market/stats.xml?type=siteindexes."""
+    rows = []
+    for mask_val, label in (("0", "today"), ("1", "tomorrow")):
+        r = _fetch(
+            "https://www.atsenergo.ru/market/stats.xml",
+            params={"type": "siteindexes", "date": date.today().strftime("%Y%m%d"), "mask": mask_val},
+            verify=False,
+        )
+        if r is None:
+            continue
+        try:
+            root = ET.fromstring(r.content)
+        except Exception as e:
+            logger.warning("ats xml parse failed: %s", e)
+            continue
+        for row in root.iter("row"):
+            zone_code = row.get("PRICE_ZONE_CODE")
+            if zone_code != "1":
+                continue
+            cols = {col.get("name"): (col.text or "").strip() for col in row if col.get("name")}
+            try:
+                price = float(cols.get("CONSUMER_PRICE") or "0")
+                delta = cols.get("DELTA_CONSUMER_PRICE") or "0"
+            except (ValueError, TypeError):
+                continue
+            rows.append({
+                "date": (row.get("TARGET_DATE") or cols.get("TARGET_DATE") or "").strip(),
+                "price": price / 1000.0,  # RUB/MWh -> RUB/kWh
+                "delta": delta,
+            })
+    rows.sort(key=lambda x: x["date"])
+    if not rows:
+        return [_slide(
+            title1="?????????????????????????? (????)",
+            title2="???????????? ???? ????????????????",
+            onscreen="???????? ?????? ???? ?????????????? ???????? 1 ???? ???????????????? ???? ??????.",
+            tts="???????????? ?? ???????? ???????????????????????????? ????????????????????.",
+            bell=False, save=True,
+        )]
+    lines = []
+    tts_parts = []
+    for row in rows[-2:]:
+        sign = "+" if not row["delta"].startswith("-") else ""
+        lines.append(f"{row['date']}: {row['price']:.2f} ???/?????????? ({sign}{row['delta']}%)")
+        tts_parts.append(
+            f"{row['date']} ??? {_price_words(row['price'])} ???? ????????????????-??????")
+    latest = rows[-1]
+    return [_slide(
+        title1="?????????????????????????? (????)",
+        title2=f"{latest['price']:.2f} ???/??????????",
+        title3="???????? ??????, ????-1 (?????????????????????????? ??????.)",
+        onscreen=("???????? ??????, ?????????????? ???????? 1\n"
+                  "(?????????????????????????? ??????????????, ?????????? ???? ?????????? ????????????)\n\n" + "\n".join(lines))[:1024],
+        tts="?????????????? ?????????????????????????????? ???????? ???? ?????????? ???? ?????????? ????????????. " + " ".join(tts_parts) + ".",
+        bell=False, save=True,
+    )]
+
+
 CHANNEL_HANDLERS = {
+    "nordpool": channel_nordpool,
+    "currency": channel_currency,
+    "energy_ru": channel_energy_ru,
     "charging": channel_charging,
     "attractions": channel_attractions,
     "traffic": channel_traffic,
@@ -540,6 +851,7 @@ CHANNEL_HANDLERS = {
 def handle_custom_channel_data(request, name):
     """Dispatch a custom data channel request to the matching content handler."""
     payload = _load_json(request)
+    payload["_query"] = {k: v for k, v in request.GET.items()}
     handler = CHANNEL_HANDLERS.get(name)
     if handler is None:
         return JsonResponse([{
