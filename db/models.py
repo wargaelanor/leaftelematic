@@ -1,18 +1,18 @@
-import hashlib
 import re
 from secrets import token_hex
 
 import pyotp
 from django.conf import settings
 from django.contrib.auth.hashers import make_password, check_password
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, UserManager
 from django.core import validators
 from django.db import models
+from django.db.models import Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from rest_framework.authtoken.models import Token
-from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
+from rest_framework.authtoken.models import Token
 
 from api.utils import OTPNotEnabledError
 from tculink.coordinators import COORDINATORS
@@ -39,6 +39,7 @@ ALERT_TYPES = (
     (19, _('Received new data')),
     (20, _('Burglar alert')),
     (21, _('Tow Notification')),
+    (22, _('End Battery Lease Contract')),
     (92, _('TCU Configuration error')),
     (93, _('Remote Start/Stop error')),
     (94, _('Horn & Light error')),
@@ -65,10 +66,11 @@ COMMAND_TYPES = (
     (12, _('Stop Horn & light')),
     (13, _('Remote Start')),
     (14, _('Remote Stop')),
-    (15, _("Configuration Request"))
+    (15, _("Configuration Request")),
+    (16, _('End Battery Lease Contract'))
 )
 
-SENSITIVE_COMMANDS = [7,8,9,10,11,12,13,14]
+SENSITIVE_COMMANDS = [7,8,9,10,11,12,13,14,16]
 
 COMMAND_RESULTS = (
     (-1, _('Waiting')),
@@ -168,9 +170,20 @@ class CARWINGSPasswordValidator(validators.RegexValidator):
     )
     flags = re.ASCII
 
+class EmailOrUsernameUserManager(UserManager):
+    def get_by_natural_key(self, username):
+        case_insensitive_field = self.model.USERNAME_FIELD + "__iexact"
+        try:
+            return self.get(
+                Q(**{case_insensitive_field: username}) | Q(email__iexact=username)
+            )
+        except self.model.MultipleObjectsReturned:
+            raise self.model.DoesNotExist
+
 # Username: only AA-ZZ aa-zz 0-9 - _ .
 # password: only AA-ZZ aa-zz 0-9 - _ = + @ # ? !
 class User(AbstractUser):
+    objects = EmailOrUsernameUserManager()
     username_validator = CARWINGSUsernameValidator()
     tcu_pass_validator = CARWINGSPasswordValidator()
     tcu_pass_hash = models.CharField(max_length=16, validators=[tcu_pass_validator])
@@ -220,6 +233,8 @@ class User(AbstractUser):
         if len(code) != 4:
             return False
         return check_password(code, self.cmd_pin_hash)
+
+
 
 
 class TCUConfiguration(models.Model):
@@ -306,6 +321,7 @@ class EVInfo(models.Model):
     param21 = models.IntegerField(default=0)
     cabin_temp = models.FloatField(default=0)
     force_soc_display = models.BooleanField(default=False)
+    lease_contract = models.BooleanField(default=False)
     obc_6kw_avail = models.BooleanField(default=False)
     batt_heater_avail = models.BooleanField(default=False)
     batt_heater_status = models.BooleanField(default=False)
@@ -601,6 +617,11 @@ class CRMTripRecord(models.Model):
     # battery degradation analysis 2
     bda2_capacity_bars_end = models.BigIntegerField(default=0)
     bda2_soc_end = models.BigIntegerField(default=0)
+    # TPMS
+    tpms_fr = models.IntegerField(default=0)
+    tpms_fl = models.IntegerField(default=0)
+    tpms_rr = models.IntegerField(default=0)
+    tpms_rl = models.IntegerField(default=0)
     # other
     headlight_on_time = models.BigIntegerField(default=0)
     average_acceleration = models.FloatField(default=0)

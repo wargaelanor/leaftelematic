@@ -1,6 +1,7 @@
 from db.models import Car
 from tculink.gdc_proto.acp245 import composer
-from tculink.gdc_proto.ficosa.utils import command_to_destination_id, CONFIGURATION_MAP, ConfigurationFieldType
+from tculink.gdc_proto.ficosa.utils import command_to_destination_id, CONFIGURATION_MAP, ConfigurationFieldType, \
+    PROBE_DATACONFIG
 import logging
 logger = logging.getLogger("ficosa")
 
@@ -51,6 +52,23 @@ def handle(_, acp_data: dict, car: Car, source_id: int, __) -> bytes:
 
             acp_msg += config_encoder.encode()
             logger.debug(f"<< ServProv Message: {acp_msg.hex()}")
+        elif dest_id == 0xf0:
+            # probe data config
+            config_encoder = composer.ACPProbeConfig()
+            config_encoder.service_type = config_template["service_type"]
+
+            if config_payload["type"] == "send":
+                config_payload = config_payload["data"]
+                for field, info in config_template["fields"].items():
+                    if field in config_payload:
+                        value = config_payload[field]
+                        field_type = info["type"]
+                        if field_type == ConfigurationFieldType.SELECT:
+                            config_bin = PROBE_DATACONFIG[config_template["service_type"]][value]
+                            config_encoder.records.extend(composer.parse_config_file(config_bin))
+
+            acp_msg += config_encoder.encode()
+            logger.debug(f"<< ACPProbeConfigRaw Message: {acp_msg.hex()}")
         else:
             config_encoder = composer.ACPConfigEncoder()
             service_type = config_template["service_type"]
@@ -124,6 +142,9 @@ def handle(_, acp_data: dict, car: Car, source_id: int, __) -> bytes:
             acp_msg += composer.EVCommandTail(command=0x10 if car.command_type == 13 else 0x11).encode()
             acp_msg += composer.TimeSync().encode()
             acp_msg += composer.RemoteStartRequest().encode()
+        elif dest_id == 0xe4:
+            acp_msg += composer.EVCommandTail(command=0x71).encode()
+            acp_msg += composer.TimeSync().encode()
         else:
             car.command_result = 1
             app_id = 0x1d

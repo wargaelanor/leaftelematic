@@ -12,7 +12,7 @@ from django.utils.translation import gettext as _
 logger = logging.getLogger("ficosa")
 
 
-NON_AUTHABLE = [0x29, 0x2a, 0x2c, 0xdc]
+NON_AUTHABLE = [0x29, 0x2a, 0x2c, 0xdc, 0xe2, 0xe1]
 
 def handle(bin_data: bytes, acp_data: dict, car: Car, source_id: int, destination_id: int) -> bytes:
     """
@@ -46,6 +46,7 @@ def handle(bin_data: bytes, acp_data: dict, car: Car, source_id: int, destinatio
     c_ev_info.limit_chg_time = ev_info["1kw_chg"]
     c_ev_info.full_chg_time = ev_info["3kw_chg"]
     c_ev_info.obc_6kw = ev_info["6kw_chg"]
+    c_ev_info.lease_contract = ev_info["lease_contract"]
     c_ev_info.wh_content = ev_info["gids"]*WH_PER_GID_GEN1
     c_ev_info.obc_6kw_avail = True
 
@@ -64,11 +65,7 @@ def handle(bin_data: bytes, acp_data: dict, car: Car, source_id: int, destinatio
     c_ev_info.last_updated = timezone.now()
 
     if c_ev_info.max_gids < 1:
-        dcm_ver = acp_data["veh_desc"].get("dcm_ver", "")
-        if dcm_ver == "TCU032":
-            c_ev_info.max_gids = GIDS_NEW_30kWh
-        elif dcm_ver == "TCU033":
-            c_ev_info.max_gids = GIDS_NEW_40kWh
+        c_ev_info.max_gids = ev_info.get("gids_when_new", 0)
 
     c_ev_info.save()
 
@@ -224,6 +221,56 @@ def handle(bin_data: bytes, acp_data: dict, car: Car, source_id: int, destinatio
 
         if destination_id == 0x3e:
             subject = f"80% {subject}"
+
+        new_alert.save()
+        sync_to_async(send_vehicle_alert_notification(
+            car,
+            message,
+            subject), thread_sensitive=False)
+
+    if destination_id == 0xe4:
+        new_alert = AlertHistory()
+        new_alert.type = 22
+        new_alert.car = car
+        new_alert.command_id = car.command_id
+
+        logger.debug("GBA Unblock!")
+        logger.debug(app_info)
+
+        if app_info["flags"]["fail"]> 0:
+            subject = _("Unblock charge failure")
+            message = _("Unblocking charge features could not be completed.")
+            message += f" (ECODE {app_info['raw'].hex()})"
+            new_alert.type = 99
+        else:
+            subject = _("Unblock charging")
+            message = _("Unblock request sent successfully.")
+        new_alert.additional_data = message
+
+        new_alert.save()
+        sync_to_async(send_vehicle_alert_notification(
+            car,
+            message,
+            subject), thread_sensitive=False)
+
+    if destination_id == 0xe2 or destination_id == 0xe1:
+        new_alert = AlertHistory()
+        new_alert.type = 22
+        new_alert.car = car
+        new_alert.command_id = car.command_id
+
+        logger.debug("GBA Unblock!")
+        logger.debug(app_info)
+
+        if app_info["flags"]["fail"]> 0:
+            subject = _("Unblock charge failure")
+            message = _("Unblocking charge features failed.")
+            message += f" (ECODE {app_info['raw'].hex()})"
+            new_alert.type = 99
+        else:
+            subject = _("Unblock charging")
+            message = _("Charging has been unblocked successfully.") if destination_id == 0xe2 else _("Failed to unblock charging, CAN Error!")
+        new_alert.additional_data = message
 
         new_alert.save()
         sync_to_async(send_vehicle_alert_notification(
