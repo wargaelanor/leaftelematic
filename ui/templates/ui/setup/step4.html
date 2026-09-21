@@ -56,6 +56,27 @@
                         </div>
                     </div>
                     {% endif %}
+                    {% if provider.id == 'smsc' %}
+                    <div class="mt-4">
+                        <div class="p-4 text-sm text-yellow-800 dark:text-yellow-200 rounded-lg bg-yellow-50 dark:bg-yellow-800" role="alert">
+                            Чтоб воспользоваться данным сервисом необходимо на сайте зарегистрировать sender id.
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if provider.id == 'smsgateway' %}
+                    <div class="mt-4">
+                        <div class="p-4 text-sm text-yellow-800 dark:text-yellow-200 rounded-lg bg-yellow-50 dark:bg-yellow-800" role="alert">
+                            Для блока телеметрии желательно выбрать М2М тариф (только для юр лиц) или тариф для умных устройств.
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if provider.id == 'smsgateway' %}
+                    <div class="mt-4">
+                        <div class="p-4 text-sm text-green-800 dark:text-green-200 rounded-lg bg-green-50 dark:bg-green-800" role="alert">
+                            Или воспользуйтесь автономным SMS-шлюзом на базе микроконтроллера ESP32 — плата с собственной SIM-картой подключается к серверу напрямую и не требует смартфона. Дополнительная информация: <a href="/static/esp32_sms_gateway.html" target="_blank" class="underline font-medium">прошивка и настройка</a>
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
             {% endfor %}
 

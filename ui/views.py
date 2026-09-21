@@ -464,6 +464,34 @@ def change_command_pin(request):
             return redirect('/account')
     return render(request, 'ui/change_command_pin.html', {'user': request.user, 'form': form})
 
+@login_required(login_url='signin')
+def user_panel(request):
+    if not request.user.is_superuser:
+        return redirect('/')
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        uid = request.POST.get('uid')
+        if action and uid and uid.isdigit():
+            target = db.models.User.objects.filter(pk=int(uid)).first()
+            if target and target.pk != request.user.pk:
+                if action == 'toggle_active':
+                    target.is_active = not target.is_active
+                    target.save(update_fields=['is_active'])
+                elif action == 'toggle_staff':
+                    target.is_staff = not target.is_staff
+                    target.save(update_fields=['is_staff'])
+                elif action == 'toggle_super':
+                    target.is_superuser = not target.is_superuser
+                    target.save(update_fields=['is_superuser'])
+        return redirect('user_panel')
+
+    users = db.models.User.objects.all().order_by('-date_joined')
+    total = users.count()
+    admin_count = users.filter(is_superuser=True).count()
+    active_count = users.filter(is_active=True).count()
+    return render(request, 'ui/user_panel.html', {'users': users, 'total': total, 'admin_count': admin_count, 'active_count': active_count})
+
 def car_list(request):
     if not request.user.is_authenticated:
         slideshow_images = [

@@ -1,0 +1,104 @@
+{% extends "ui/base.html" %}
+{% load i18n %}
+{% block title %} {% translate "User panel" %} {% endblock %}
+{% block content %}
+<div class="max-w-6xl mx-auto p-4">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-semibold text-gray-800 dark:text-gray-100">{% translate "User panel" %}</h1>
+        <div class="text-sm text-gray-600 dark:text-gray-300">{% translate "Total users" %}: <span class="font-bold text-lg text-blue-700 dark:text-blue-300">{{ total }}</span></div>
+    </div>
+
+    <div class="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-4">
+            <div class="text-sm text-gray-500 dark:text-gray-400">{% translate "Total users" %}</div>
+            <div class="text-2xl font-bold">{{ total }}</div>
+        </div>
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-4">
+            <div class="text-sm text-gray-500 dark:text-gray-400">{% translate "Admins" %}</div>
+            <div class="text-2xl font-bold">{{ admin_count }}</div>
+        </div>
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-4">
+            <div class="text-sm text-gray-500 dark:text-gray-400">{% translate "Active" %}</div>
+            <div class="text-2xl font-bold">{{ active_count }}</div>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-x-auto">
+        <table class="w-full text-sm text-left text-gray-700 dark:text-gray-200">
+            <thead class="text-xs uppercase bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300">
+                <tr>
+                    <th class="px-4 py-3">ID</th>
+                    <th class="px-4 py-3">{% translate "Username" %}</th>
+                    <th class="px-4 py-3">{% translate "Email" %}</th>
+                    <th class="px-4 py-3">{% translate "Registered" %}</th>
+                    <th class="px-4 py-3">{% translate "Cars" %}</th>
+                    <th class="px-4 py-3">{% translate "Rights" %}</th>
+                    <th class="px-4 py-3">{% translate "Actions" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr class="border-t border-gray-200 dark:border-gray-600">
+                    <td class="px-4 py-3">{{ u.id }}</td>
+                    <td class="px-4 py-3 font-medium">{{ u.username }}</td>
+                    <td class="px-4 py-3">{{ u.email }}</td>
+                    <td class="px-4 py-3">{{ u.date_joined|date:"d.m.Y H:i" }}</td>
+                    <td class="px-4 py-3">{{ u.car_set.all|length }}</td>
+                    <td class="px-4 py-3">
+                        {% if u.is_superuser %}
+                        <span class="inline-block px-2 py-0.5 rounded text-xs bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-200">Admin</span>
+                        {% endif %}
+                        {% if u.is_staff %}
+                        <span class="inline-block px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200">Staff</span>
+                        {% endif %}
+                        {% if u.is_active %}
+                        <span class="inline-block px-2 py-0.5 rounded text-xs bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200">Active</span>
+                        {% else %}
+                        <span class="inline-block px-2 py-0.5 rounded text-xs bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200">Blocked</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3">
+                        {% if u.pk != user.pk %}
+                        <div class="flex flex-wrap gap-2">
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="uid" value="{{ u.pk }}">
+                                <input type="hidden" name="action" value="toggle_active">
+                                {% if u.is_active %}
+                                <button type="submit" class="text-xs px-2 py-1 rounded bg-red-600 hover:bg-red-700 text-white">Block</button>
+                                {% else %}
+                                <button type="submit" class="text-xs px-2 py-1 rounded bg-green-600 hover:bg-green-700 text-white">Unblock</button>
+                                {% endif %}
+                            </form>
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="uid" value="{{ u.pk }}">
+                                <input type="hidden" name="action" value="toggle_staff">
+                                {% if u.is_staff %}
+                                <button type="submit" class="text-xs px-2 py-1 rounded bg-amber-500 hover:bg-amber-600 text-white">Staff off</button>
+                                {% else %}
+                                <button type="submit" class="text-xs px-2 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white">Staff on</button>
+                                {% endif %}
+                            </form>
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="uid" value="{{ u.pk }}">
+                                <input type="hidden" name="action" value="toggle_super">
+                                {% if u.is_superuser %}
+                                <button type="submit" class="text-xs px-2 py-1 rounded bg-purple-600 hover:bg-purple-700 text-white">Admin off</button>
+                                {% else %}
+                                <button type="submit" class="text-xs px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white">Admin on</button>
+                                {% endif %}
+                            </form>
+                        </div>
+                        {% else %}
+                        <span class="text-xs text-gray-400">{% translate "You" %}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

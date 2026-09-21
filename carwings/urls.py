@@ -77,6 +77,7 @@ urlpatterns = [
     path('password-reset-complete/',
                 auth_views.PasswordResetCompleteView.as_view(template_name='ui/reset_password_complete.html'),
                 name='password_reset_complete'),
+    path('user-panel', views.user_panel, name='user_panel'),
     path('account', views.account, name='account'),
     path('account/2fa/enable', views.enable_otp, name='enable_otp'),
     path('account/2fa/disable', views.disable_otp, name='disable_otp'),

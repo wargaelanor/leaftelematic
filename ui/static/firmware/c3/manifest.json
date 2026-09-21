@@ -1,0 +1,13 @@
+{
+  "name": "ESP32-C3 + SIM800 SMS-шлюз",
+  "version": "1.5",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32-C3",
+      "parts": [
+        { "path": "esp32-c3-sim800.merged.bin", "offset": 0 }
+      ]
+    }
+  ]
+}

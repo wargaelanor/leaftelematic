@@ -14,7 +14,7 @@ class ProviderSMSC(BaseSMSProvider):
         ('password', _("smsc.ru password")),
         ('msn', _("TCU Phone Number (international format)")),
     ]
-    HELP_TEXT = _("Credentials from smsc.ru (SMS-Центр). Works with Russian cards. Binary (8-bit) SMS is supported.")
+    HELP_TEXT = _("Укажите логин и пароль от вашего аккаунта на сайте smsc.ru (SMS-Центр). Оплатить можно обычной российской картой. Сервис умеет отправлять технические (бинарные) SMS — именно такие нужны блоку телеметрии автомобиля для связи.")
     SUPPORTED_TYPES = [SMSType.TEXT, SMSType.BINARY]
 
     def send(self, message, configuration):

@@ -1,0 +1,13 @@
+{
+  "name": "TTGO T-Call v1.3/1.4 SMS-шлюз",
+  "version": "1.5",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "parts": [
+        { "path": "t-call.merged.bin", "offset": 0 }
+      ]
+    }
+  ]
+}

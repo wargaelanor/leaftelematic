@@ -44,6 +44,9 @@
             </a>
             <div class="space-x-4">
                 {% if user.is_authenticated or pending_2fa %}
+                {% if user.is_superuser %}
+                <a href="/user-panel" class="text-blue-600 hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-400 font-semibold">{% translate "User panel" %}</a>
+                {% endif %}
                 <a href="/account"><span>{{ user.get_username }}</span></a>
                 <a href="/signout" class="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-400">{% translate "Sign Out" %}</a>
                 {% else %}

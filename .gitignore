@@ -7,4 +7,13 @@ logs
 *.cert
 __pycache__
 .env
-*.mo
+*.mo.env.backup-*
+.env.bak-*
+db/backup/
+*.backup*
+proxy/
+remote_proxy_only-compose.yml
+docker-compose.proxy.yml
+ocw_server_1.inspect*
+decode_probe.py
+walk_probe.py

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 SMS-шлюз — прошивка и настройка - OpenCARWINGS</title>
+    <script src="/static/js/tailwind.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <script type="module" src="/static/firmware/vendor/install-button.js"></script>
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 dark:text-white min-h-screen flex flex-col">
+    <main class="flex-grow">
+        <!-- Navigation Bar -->
+        <nav class="bg-white dark:bg-gray-800 shadow-sm p-4">
+            <div class="max-w-6xl mx-auto flex justify-between items-center">
+                <a href="/" class="text-md font-semibold text-gray-800 dark:text-gray-200">
+                    <img src="/static/carwingslogo_color.png" height="45px" style="height: 45px;" class=" relative top-0 left-0 block dark:hidden"/>
+                    <img src="/static/carwingslogo_color_white.png" height="45px" style="height: 45px;" class=" relative top-0 left-0 hidden dark:block"/>
+                </a>
+                <a href="/" class="text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-400">← Назад</a>
+            </div>
+        </nav>
+
+        <div class="max-w-6xl mx-auto px-4 py-8">
+            <h1 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-2">SMS-шлюз на базе микроконтроллера ESP32</h1>
+            <p class="text-gray-700 dark:text-gray-300 max-w-3xl mb-8">
+                Автономное устройство с собственной SIM-картой, которое подключается к OpenCARWINGS напрямую и отправляет SMS-команды
+                для TCU, не требуя смартфона или USB-модема. Прошивка выполняется в браузере повторно, без установки SDK.
+            </p>
+
+            <!-- ============ Официальный флашер ============ -->
+            <section id="esptool" class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Прошивка через официальный веб-флашер Espressif (ESP Tool)</h2>
+                <p class="text-sm text-gray-700 dark:text-gray-300 mb-4">
+                    Если кнопки «Прошить» недоступны (страница открыта по HTTP, а не HTTPS), используйте официальный онлайн-флашер
+                    Espressif — <a href="https://espressif.github.io/esptool-js/" target="_blank" class="underline font-medium">ESP Tool</a>.
+                    Он работает в браузере <b>Google Chrome / Microsoft Edge / Opera</b> на компьютере (Safari не поддерживается),
+                    прошивка идёт через Web Serial и не требует установки программ.
+                </p>
+                <ol class="space-y-2 text-sm text-gray-700 dark:text-gray-300 list-decimal list-inside">
+                    <li>
+                        Скачайте прошивку для своей платы:
+                        <a href="/static/firmware/c3/esp32-c3-sim800.merged.bin" class="underline">ESP32-C3 + SIM800 (.bin, ~1.1 МБ)</a>
+                        или
+                        <a href="/static/firmware/tcall/t-call.merged.bin" class="underline">TTGO T-Call (.bin, ~1.1 МБ)</a>.
+                    </li>
+                    <li>Подключите плату к компьютеру по USB (C3 — USB-C, T-Call — Micro-USB) и откройте <a href="https://espressif.github.io/esptool-js/" target="_blank" class="underline">https://espressif.github.io/esptool-js/</a>.</li>
+                    <li>Выберите <b>Baudrate: 921600</b> (если при подключении будут ошибки — попробуйте 460800).</li>
+                    <li>Нажмите <b>Connect</b> и в диалоге браузера выберите COM-порт платы (для T-Call Chrome покажет «USB Serial / CP2102», для ESP32-C3 — «USB Serial / JTAG»).</li>
+                    <li>Нажмите <b>Add File</b> и выберите скачанный .bin. В строке файла укажите <b>Flash Address: 0x0</b>. Параметры <b>Flash Mode: dio</b>, <b>Flash Size: detect</b> можно не трогать (значения уже записаны в прошивку).</li>
+                    <li>Нажмите <b>Program</b> и дождитесь окончания записи (в консоли появится текст о записи и завершении).</li>
+                    <li>После записи нажмите <b>Reset</b> или заново подключите USB — плата перезагрузится с новой прошивкой.</li>
+                </ol>
+                <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                    Примечание: если ESP Tool сообщает «Timed out» и не может записать — плата не вошла в режим загрузчика.
+                    Зажмите кнопку <b>BOOT</b> (на T-Call это EN-кластер), нажмите и отпустите <b>RST</b>, затем снова <b>Program</b>.
+                    Прошивка полностью перезапишет flash-память платы.
+                </p>
+            </section>
+
+            <!-- ============ Инструкция ============ -->
+            <section class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Настройка после прошивки</h2>
+                <ol class="space-y-4 text-sm text-gray-700 dark:text-gray-300 list-decimal list-inside">
+                    <li>
+                        Вставьте SIM-карту с интернетом. Провайдер GPRS — любой, APN по умолчанию <code class="underline">internet</code>
+                        (уточните у оператора; можно изменить в настройках).
+                    </li>
+                    <li>
+                        Подключитесь к Wi-Fi точке устройства <code class="underline">ESP32-TCU-SMS</code> (пароль <code class="underline">tcu12345</code>),
+                        откройте <code class="underline">http://192.168.4.1</code> и перейдите в раздел «Настройка».
+                    </li>
+                    <li>
+                        Укажите способ подключения к интернету: <b>WiFi</b> (SSID/пароль вашей сети) или <b>SIM-карта (GPRS)</b>.
+                        Через WiFi работа стабильнее и без задержек; через GPRS — немного медленнее и зависит от качества сигнала сотовой связи.
+                        Для GPRS при необходимости укажите APN, логин и пароль.
+                    </li>
+                    <li>
+                        Заполните поля ретранслятора:
+                        <ul class="list-disc list-inside mt-2 ml-4">
+                            <li><b>Device ID</b> и <b>Encryption key</b> — те же значения, что указаны в настройках вашей машины на сервере (провайдер SMS → поле «Device ID» / «Encryption key»).</li>
+                            <li><b>WebSocket URL</b> — адрес вашего сервера, вставьте готовую строку:
+                        <code class="underline">ws://138.16.224.7/ws/smsgateway/</code>.</li>
+                        </ul>
+                        Нажмите «Сохранить и перезагрузить».
+                    </li>
+                    <li>
+                        На сервере в настройках машины (раздел SMS provider, тип «Use your old smartphone») укажите те же
+                        <b>Device ID</b> и <b>Encryption key</b>, а в поле «Phone number» — номер SIM-карты, установленной в шлюз.
+                        Нажмите «Сохранить».
+                    </li>
+                    <li>
+                        Проверьте статус на <code class="underline">http://192.168.4.1</code> — строка <b>WebSocket: connected</b>.
+                        Готово, шлюз принимает команды и отправляет SMS для TCU.
+                    </li>
+                </ol>
+            </section>
+
+            <!-- ============ Совет ============ -->
+            <section class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Совет</h2>
+                <p class="text-sm text-gray-700 dark:text-gray-300">
+                    Для теста подойдёт любая SIM-карта с пакетом интернета — обычно достаточно «SMS-пакета» от вашего оператора.
+                    Устройство поддерживает авто-переподключение при обрыве сети и пережидает перезагрузку сервера.
+                    Если после настройки нет соединения — проверьте APN и наличие интернета на SIM (пункт меню «Проверить интернет»).
+                </p>
+            </section>
+
+            <!-- ============ Плата 2: TTGO T-Call ============ -->
+            <section id="tcall" class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+                <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                    <div class="flex-1">
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-1">TTGO T-Call v1.3 / v1.4</h2>
+                        <p class="text-gray-600 dark:text-gray-400 text-sm">Готовая плата «всё в одном»: классический ESP32 + встроенный SIM800L, разъём для LiPo, CP2102 (USB-UART).</p>
+                    </div>
+                    <a href="/static/firmware/tcall/t-call.merged.bin" class="whitespace-nowrap px-4 py-2 rounded-lg border border-blue-700 text-blue-700 dark:text-blue-200 text-sm font-medium hover:bg-blue-50 dark:hover:bg-gray-700">Скачать .bin</a>
+                </div>
+
+                <div class="mt-4 grid md:grid-cols-2 gap-4 text-sm text-gray-700 dark:text-gray-300">
+                    <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-700">
+                        <b>Важно</b>
+                        <ul class="list-disc list-inside mt-1 space-y-1">
+                            <li>Обязателен LiPo аккумулятор (SIM800L пики ~2А)</li>
+                            <li>Модемный UART: GPIO26 (RX) / GPIO27 (TX) — уже в прошивке</li>
+                            <li>PWRKEY управляется автоматически</li>
+                            <li>USB только для прошивки/консоли (CP2102)</li>
+                        </ul>
+                    </div>
+                    <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-700">
+                        <b>Особенности</b>
+                        <ul class="list-disc list-inside mt-1 space-y-1">
+                            <li>Работает от встроенного SIM800L напрямую</li>
+                            <li>Лог в USB-консоль по CP2102</li>
+                            <li>Wi-Fi точка для настройки</li>
+                            <li>Совместим с открытым JAR-протоколом</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="mt-5 flex flex-wrap items-center gap-4">
+                    <esp-web-install-button manifest="/static/firmware/tcall/manifest.json">
+                        <button slot="activate" class="inline-flex items-center px-6 py-3 rounded-lg bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold">
+                            <span class="material-symbols-outlined mr-2">settings_ethernet</span> Прошить плату T-Call
+                        </button>
+                        <span slot="unsupported">Ваш браузер не поддерживает Web Serial. Используйте Google Chrome или Microsoft Edge.</span>
+                    </esp-web-install-button>
+                </div>
+            </section>
+
+            <!-- ============ Плата 1: ESP32-C3 + SIM800 ============ -->
+            <section id="c3" class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+                <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                    <div class="flex-1">
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-1">Плата ESP32-C3 + SIM800</h2>
+                        <p class="text-gray-600 dark:text-gray-400 text-sm">Готовый Ethernet/WS-шлюз на модуле ESP32-C3 (нативный USB-CDC, лог в консоль) с внешним GSM-модулем SIM800L/H/SIM808.</p>
+                    </div>
+                    <a href="/static/firmware/c3/esp32-c3-sim800.merged.bin" class="whitespace-nowrap px-4 py-2 rounded-lg border border-blue-700 text-blue-700 dark:text-blue-200 text-sm font-medium hover:bg-blue-50 dark:hover:bg-gray-700">Скачать .bin</a>
+                </div>
+
+                <div class="mt-4 grid md:grid-cols-2 gap-4 text-sm text-gray-700 dark:text-gray-300">
+                    <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-700">
+                        <b>Подключение SIM800</b>
+                        <ul class="list-disc list-inside mt-1 space-y-1">
+                            <li>SIM800 RX ← GPIO4 (ESP32 TX)</li>
+                            <li>SIM800 TX → GPIO5 (ESP32 RX)</li>
+                            <li>Питание 5В (пики до 2А) — внешний DC-DC</li>
+                            <li>Уровни сигналов: SIM800 2.8В, делитель 1.8–3.3В</li>
+                        </ul>
+                    </div>
+                    <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-700">
+                        <b>Особенности</b>
+                        <ul class="list-disc list-inside mt-1 space-y-1">
+                            <li>Лог в USB-консоль (GPRS, WS, SMS)</li>
+                            <li>APN по умолчанию: <code class="underline">internet</code></li>
+                            <li>Совместим с открытым JAR-протоколом</li>
+                            <li>Wi-Fi точка для настройки</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="mt-5 flex flex-wrap items-center gap-4">
+                    <esp-web-install-button manifest="/static/firmware/c3/manifest.json">
+                        <button slot="activate" class="inline-flex items-center px-6 py-3 rounded-lg bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold">
+                            <span class="material-symbols-outlined mr-2">settings_ethernet</span> Прошить плату ESP32-C3
+                        </button>
+                        <span slot="unsupported">Ваш браузер не поддерживает Web Serial. Используйте Google Chrome или Microsoft Edge.</span>
+                    </esp-web-install-button>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="bg-gray-800 text-white py-4 mt-auto">
+        <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center">
+            <p class="text-sm">&copy; 2026 OpenCARWINGS Project.</p>
+            <div class="flex flex-row gap-2 justify-between items-center">
+                <a href="/" class="text-sm text-gray-300">← Назад</a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
